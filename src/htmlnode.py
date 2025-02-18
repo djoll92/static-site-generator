@@ -32,3 +32,23 @@ class LeafNode(HTMLNode):
         open_tag = f"<{self.tag}{self.props_to_html()}>" if self.tag not in (None, "") else ""
         close_tag = f"</{self.tag}>" if self.tag not in (None, "") else ""
         return f"{open_tag}{self.value}{close_tag}"
+    
+    def __repr__(self):
+        return f"LeafNode({self.tag}, {self.value}, {self.props})"
+    
+
+class ParentNode(HTMLNode):
+
+    def __init__(self, tag, children, props=None):
+        super().__init__(tag, None, children, props)
+
+    def to_html(self):
+        if self.tag in (None, ""):
+            raise ValueError("Parent node has no tag. All parent nodes must have a tag!")
+        if self.children in (None, "", []):
+            raise ValueError("Parent node has no children. All parent nodes must have children!")
+        inner_html = reduce(lambda acummulator, child: acummulator + child.to_html(), self.children, "")
+        return f"<{self.tag}>{inner_html}</{self.tag}>"
+    
+    def __repr__(self):
+        return f"ParentNode({self.tag}, children: {self.children}, {self.props})"
