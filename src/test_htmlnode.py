@@ -49,11 +49,6 @@ class TestLeafNode(unittest.TestCase):
             node = LeafNode("a", None)
             node.to_html()
 
-    def test_empty_2(self):
-        with self.assertRaises(ValueError):
-            node = LeafNode("a", "")
-            node.to_html()
-
     def test_repr(self):
         node = LeafNode("a", "link text", {"href":"https://www.google.com","target":"_blank"})
         self.assertEqual(
