@@ -1,8 +1,6 @@
 import unittest
 
-from textnode import TextNode, TextType
-from textnode import text_node_to_html_node
-from textnode import split_nodes_delimiter
+from textnode import TextNode, TextType, text_node_to_html_node, split_nodes_delimiter, extract_markdown_links, extract_markdown_images, split_nodes_image, split_nodes_link
 from htmlnode import LeafNode
 
 
@@ -53,6 +51,7 @@ class TestTextNode(unittest.TestCase):
         self.assertEqual(html_node.value, "")
         self.assertEqual(html_node.props["src"], "https://www.boot.dev/img/bootdev-logo-full-small.webp")
         self.assertEqual(html_node.props["alt"], "Boot dev logo image")
+
 
 class TestSplitNodesDelimiter(unittest.TestCase):
     def test_code(self):
@@ -113,6 +112,164 @@ class TestSplitNodesDelimiter(unittest.TestCase):
                 TextNode("italic", TextType.ITALIC),
             ],
             new_nodes,
+        )
+
+
+class TestExtractMarkdownImages(unittest.TestCase):
+
+    def test_single_image(self):
+        text = "![alt text](image.jpg)"
+        self.assertListEqual(
+            extract_markdown_images(text),
+            [("alt text", "image.jpg")]
+        )
+
+    def test_multiple_image(self):
+        text = "![img1](url1.jpg) some text ![img2](url2.jpg)"
+        self.assertListEqual(
+            extract_markdown_images(text),
+            [("img1", "url1.jpg"), ("img2", "url2.jpg")]
+        )
+
+    def test_with_no_images(self):
+        text = "Just plain text"
+        self.assertListEqual(
+            extract_markdown_images(text),
+            []
+        )
+
+    def test_with_regular_links(self):
+        text = "[not an image](not-image.jpg)"
+        self.assertListEqual(
+            extract_markdown_images(text),
+            []
+        )
+
+
+class TestExtractMarkdownLinks(unittest.TestCase):
+
+    def test_single_link(self):
+        text = "[to boot dev](https://www.boot.dev)"
+        self.assertListEqual(
+            extract_markdown_links(text),
+            [("to boot dev", "https://www.boot.dev")]
+        )
+
+    def test_multiple_links(self):
+        text = "This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)"
+        self.assertListEqual(
+            extract_markdown_links(text),
+            [("to boot dev", "https://www.boot.dev"), ("to youtube", "https://www.youtube.com/@bootdotdev")]
+        )
+
+    def test_with_no_links(self):
+        text = "Just plain text"
+        self.assertListEqual(
+            extract_markdown_links(text),
+            []
+        )
+
+    def test_with_image(self):
+        text = "![alt text](image.jpg)"
+        self.assertListEqual(
+            extract_markdown_links(text),
+            []
+        )
+
+
+class TestSplitNodesImage(unittest.TestCase):
+    def test_only_image(self):
+        node = TextNode("![boot dev logo](https://www.boot.dev/img/bootdev-logo-full-small.webp)", TextType.TEXT)
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("boot dev logo", TextType.IMAGE, "https://www.boot.dev/img/bootdev-logo-full-small.webp"),
+            ],
+            new_nodes
+        )
+
+    def test_single_image(self):
+        node = TextNode("This is text with an image ![boot dev logo](https://www.boot.dev/img/bootdev-logo-full-small.webp) in the middle!", TextType.TEXT)
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an image ", TextType.TEXT),
+                TextNode("boot dev logo", TextType.IMAGE, "https://www.boot.dev/img/bootdev-logo-full-small.webp"),
+                TextNode(" in the middle!", TextType.TEXT),
+            ],
+            new_nodes
+        )
+
+    def test_multiple_valid_images(self):
+        node = TextNode("This is text with an image ![boot dev logo](https://www.boot.dev/img/bootdev-logo-full-small.webp) and ![sorcerer avatar](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/7W7Koad.png)",
+                        TextType.TEXT)
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an image ", TextType.TEXT),
+                TextNode("boot dev logo", TextType.IMAGE, "https://www.boot.dev/img/bootdev-logo-full-small.webp"),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("sorcerer avatar", TextType.IMAGE, "https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/7W7Koad.png"),
+            ],
+            new_nodes
+        )
+
+    def test_no_images(self):
+        node = TextNode("This is text with a link [to boot dev](https://www.boot.dev)", TextType.TEXT)
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with a link [to boot dev](https://www.boot.dev)", TextType.TEXT),
+            ],
+            new_nodes
+        )
+
+
+class TestSplitNodesLink(unittest.TestCase):
+    def test_only_link(self):
+        node = TextNode("[to boot dev](https://www.boot.dev)", TextType.TEXT)
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(
+            [
+                TextNode("to boot dev", TextType.LINK, "https://www.boot.dev"),
+            ],
+            new_nodes
+        )
+
+    def test_single_link(self):
+        node = TextNode("This is text with a link [to boot dev](https://www.boot.dev) in the middle!", TextType.TEXT)
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with a link ", TextType.TEXT),
+                TextNode("to boot dev", TextType.LINK, "https://www.boot.dev"),
+                TextNode(" in the middle!", TextType.TEXT),
+            ],
+            new_nodes
+        )
+
+    def test_multiple_valid_links(self):
+        node = TextNode("This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)",
+                        TextType.TEXT)
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with a link ", TextType.TEXT),
+                TextNode("to boot dev", TextType.LINK, "https://www.boot.dev"),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("to youtube", TextType.LINK, "https://www.youtube.com/@bootdotdev"),
+            ],
+            new_nodes
+        )
+
+    def test_no_links(self):
+        node = TextNode("![boot dev logo](https://www.boot.dev/img/bootdev-logo-full-small.webp)", TextType.TEXT)
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(
+            [
+                TextNode("![boot dev logo](https://www.boot.dev/img/bootdev-logo-full-small.webp)", TextType.TEXT)
+            ],
+            new_nodes
         )
 
 
