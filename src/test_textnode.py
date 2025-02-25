@@ -1,6 +1,16 @@
 import unittest
 
-from textnode import TextNode, TextType, text_node_to_html_node, split_nodes_delimiter, extract_markdown_links, extract_markdown_images, split_nodes_image, split_nodes_link
+from textnode import (
+        TextNode,
+        TextType,
+        text_node_to_html_node,
+        split_nodes_delimiter,
+        extract_markdown_links,
+        extract_markdown_images,
+        split_nodes_image,
+        split_nodes_link,
+        text_to_textnodes
+    )
 from htmlnode import LeafNode
 
 
@@ -97,9 +107,14 @@ class TestSplitNodesDelimiter(unittest.TestCase):
             split_nodes_delimiter([node], "**", TextType.BOLD)
 
     def test_no_delimiters(self):
-        with self.assertRaises(ValueError):
-            node = TextNode("This is a bold word", TextType.TEXT)
-            split_nodes_delimiter([node], "**", TextType.BOLD)
+        node = TextNode("This is text with a code block word", TextType.TEXT)
+        new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
+        self.assertListEqual(
+            [
+                TextNode("This is text with a code block word", TextType.TEXT)
+            ],
+            new_nodes
+        )
 
     def test_delim_bold_and_italic(self):
         node = TextNode("**bold** and *italic*", TextType.TEXT)
@@ -270,6 +285,76 @@ class TestSplitNodesLink(unittest.TestCase):
                 TextNode("![boot dev logo](https://www.boot.dev/img/bootdev-logo-full-small.webp)", TextType.TEXT)
             ],
             new_nodes
+        )
+
+
+class TestTextToTextnodes(unittest.TestCase):
+    def test_multiple_valid_nodes(self):
+        text = "This is **text** with an *italic* word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        textnodes = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("text", TextType.BOLD),
+                TextNode(" with an ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" word and a ", TextType.TEXT),
+                TextNode("code block", TextType.CODE),
+                TextNode(" and an ", TextType.TEXT),
+                TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+                TextNode(" and a ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://boot.dev"),
+            ],
+            textnodes
+        )
+
+    def test_only_link(self):
+        text = "[to boot dev](https://www.boot.dev)"
+        textnodes = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("to boot dev", TextType.LINK, "https://www.boot.dev"),
+            ],
+            textnodes
+        )
+    
+    def test_single_image(self):
+        text = "This is text with an image ![boot dev logo](https://www.boot.dev/img/bootdev-logo-full-small.webp) in the middle!"
+        textnodes = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("This is text with an image ", TextType.TEXT),
+                TextNode("boot dev logo", TextType.IMAGE, "https://www.boot.dev/img/bootdev-logo-full-small.webp"),
+                TextNode(" in the middle!", TextType.TEXT),
+            ],
+            textnodes
+        )
+
+    def test_incomplete_delimiters(self):
+        with self.assertRaises(ValueError):
+            text = "This is a **bold word"
+            text_to_textnodes(text)
+
+    def test_no_delimiters(self):
+        text = "This is text with a code block word"
+        textnodes = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("This is text with a code block word", TextType.TEXT)
+            ],
+            textnodes
+        )
+
+    def test_delim_bold_and_italic(self):
+        text = "**bold** and *italic*"
+        textnodes = text_to_textnodes(text)
+        self.assertListEqual(
+            [
+                TextNode("bold", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+            ],
+            textnodes,
         )
 
 

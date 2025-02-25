@@ -1,6 +1,7 @@
 from enum import Enum
 from htmlnode import LeafNode
 import re
+from functools import reduce
 
 class TextType(Enum):
     TEXT = "text"
@@ -50,8 +51,6 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
         if node.text_type != TextType.TEXT:
             new_nodes.append(node)
         else:
-            if delimiter not in node.text:
-                raise ValueError(f"Invalid Markdown syntax. Delimiter '{delimiter}' isn't found.")
             if node.text.count(delimiter) % 2 != 0:
                 raise ValueError(f"Invalid Markdown syntax. Matching closing delimiter '{delimiter}' isn't found.")
             split_text = node.text.split(delimiter)
@@ -112,3 +111,14 @@ def extract_markdown_images(text):
 
 def extract_markdown_links(text):
     return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
+
+
+def text_to_textnodes(text):
+    delimiters = {'**':TextType.BOLD, "*":TextType.ITALIC, "`":TextType.CODE}
+    return split_nodes_link(
+        split_nodes_image(
+            reduce(lambda accumulator, delimiter: split_nodes_delimiter(accumulator, delimiter, delimiters[delimiter]), 
+                    delimiters, 
+                    [TextNode(text, TextType.TEXT)])
+            )
+        )
