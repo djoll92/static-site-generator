@@ -114,7 +114,7 @@ def extract_markdown_links(text):
 
 
 def text_to_textnodes(text):
-    delimiters = {'**':TextType.BOLD, "*":TextType.ITALIC, "`":TextType.CODE}
+    delimiters = {'**':TextType.BOLD, "*":TextType.ITALIC, "_":TextType.ITALIC, "`":TextType.CODE}
     return split_nodes_link(
         split_nodes_image(
             reduce(lambda accumulator, delimiter: split_nodes_delimiter(accumulator, delimiter, delimiters[delimiter]), 
