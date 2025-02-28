@@ -1,9 +1,6 @@
-from textnode import TextNode
-from textnode import TextType
-from textnode import extract_markdown_images
+from content import remove_and_replace_dir_content
 
 def main():
-    new_text_node = TextNode("This is the text node", TextType.BOLD, "https://www.boot.dev")
-    print(new_text_node)
+    remove_and_replace_dir_content()
 
 main()
