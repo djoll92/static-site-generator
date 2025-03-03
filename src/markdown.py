@@ -45,10 +45,10 @@ def markdown_to_html_node(markdown):
             case BlockType.PARAGRAPH:
                 parent_node.children.append(ParentNode("p", text_to_inline_html(block)))
             case BlockType.QUOTE:
-                parent_node.children.append(ParentNode("blockquote", text_to_inline_html(block.replace("\n>", " ").removeprefix(">"))))
+                parent_node.children.append(ParentNode("blockquote", text_to_inline_html(block.replace("\n>", " ").removeprefix(">").lstrip())))
             case BlockType.HEADING:
                 hash_count = re.findall(r"^#{1,6}", block)[0].count("#")
-                parent_node.children.append(ParentNode(f"h{hash_count}", text_to_inline_html(block.replace("#", "", hash_count))))
+                parent_node.children.append(ParentNode(f"h{hash_count}", text_to_inline_html(block.replace("#", "", hash_count).lstrip())))
             case BlockType.UNORDERED_LIST | BlockType.ORDERED_LIST:
                 parent_node.children.append(list_block_to_html(block, block_type))
             case BlockType.CODE:
@@ -75,3 +75,11 @@ def list_block_to_html(block_text, block_type = BlockType.UNORDERED_LIST):
     for list_item in list_items:
         list_node.children.append(ParentNode("li", text_to_inline_html(list_item)))
     return list_node
+
+
+def extract_title(markdown):
+    blocks = markdown_to_blocks(markdown)
+    for block in blocks:
+        if block.startswith("#") and not block.startswith("##"):
+            return block.lstrip("# ")
+    raise Exception("There is no h1 header in markdown.")

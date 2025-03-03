@@ -3,6 +3,7 @@ from markdown import (
     markdown_to_blocks,
     block_to_block_type,
     markdown_to_html_node,
+    extract_title,
     BlockType
 )
 
@@ -155,6 +156,27 @@ the **same** even with inline stuff
             html,
             "<div><blockquote>one two three</blockquote></div>",
         )
+
+
+class TestExtractTitle(unittest.TestCase):
+
+    def test_valid(self):
+        markdowns = ["# Heading 1", " #  Heading 1 ", "#Heading 1"]
+        for markdown in markdowns:
+            self.assertEqual(
+                "Heading 1",
+                extract_title(markdown)
+            )
+
+    def test_invalid(self):
+        with self.assertRaises(Exception):
+            markdown = "## Heading 1"
+            extract_title(markdown)
+
+    def test_invalid_2(self):
+        with self.assertRaises(Exception):
+            markdown = "Heading 1"
+            extract_title(markdown)
 
 if __name__ == "__main__":
     unittest.main()
