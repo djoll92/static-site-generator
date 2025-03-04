@@ -23,7 +23,7 @@ def clean_or_make_dir(dir_path):
     os.mkdir(dir_path)
 
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}...")
     if os.path.exists(from_path) and os.path.isfile(from_path):
         with open(from_path) as md_file:
@@ -34,7 +34,7 @@ def generate_page(from_path, template_path, dest_path):
     if markdown and template_content:
         title = extract_title(markdown)
         content = markdown_to_html_node(markdown).to_html()
-        page_content = template_content.replace("{{ Title }}", title).replace("{{ Content }}", content)
+        page_content = template_content.replace("{{ Title }}", title).replace("{{ Content }}", content).replace("href=\"/", f"href=\"{basepath}").replace("src=\"/", f"src=\"{basepath}")
         dest_path_dir = os.path.dirname(dest_path)
         if dest_path_dir:
             os.makedirs(dest_path_dir, exist_ok=True)
@@ -42,13 +42,13 @@ def generate_page(from_path, template_path, dest_path):
             page_file.write(page_content)
 
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     if os.path.exists(dir_path_content) and os.path.isdir(dir_path_content):
         content_items = os.listdir(dir_path_content)
         for item in content_items:
             src_path = os.path.join(dir_path_content, item)
             dest_path = os.path.join(dest_dir_path, item)
             if os.path.isfile(src_path) and item.endswith(".md"):
-                generate_page(src_path, template_path, dest_path.removesuffix("md") + "html")
+                generate_page(src_path, template_path, dest_path.removesuffix("md") + "html", basepath)
             elif os.path.isdir(src_path):
-                generate_pages_recursive(src_path, template_path, dest_path)
+                generate_pages_recursive(src_path, template_path, dest_path, basepath)
