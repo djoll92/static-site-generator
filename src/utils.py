@@ -62,3 +62,43 @@ def extract_markdown_links(text):
 	Each tuple should contain the anchor text and the URLs of any markdown links.
 	"""
 	return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
+
+
+def split_nodes_image(old_nodes):
+	return split_url_nodes_delimiter(old_nodes, TextType.IMAGE)
+
+
+def split_nodes_link(old_nodes):
+	return split_url_nodes_delimiter(old_nodes, TextType.LINK)
+
+
+def split_url_nodes_delimiter(old_nodes, text_type):
+	url_types = [TextType.IMAGE, TextType.LINK]
+	if text_type not in url_types:
+		raise Exception(f"Invalid text type: {text_type} is not one of these {url_types}.")
+	new_nodes = []
+	for node in old_nodes:
+		if node.text_type != TextType.TEXT:
+			new_nodes.append(node)
+			continue
+		delimiters = []
+		if text_type == TextType.LINK:
+			delimiters = extract_markdown_links(node.text)
+		if text_type == TextType.IMAGE:
+			delimiters = extract_markdown_images(node.text)
+		if len(delimiters) == 0:
+			new_nodes.append(node)
+			continue
+		node_text = node.text
+		for text, url in delimiters:
+			delimiter = f"[{text}]({url})"
+			if text_type == TextType.IMAGE:
+				delimiter = "!" + delimiter
+			without_delimiter = node_text.split(delimiter, 1)
+			node_text = without_delimiter[1]
+			if without_delimiter[0] != "":
+				new_nodes.append(TextNode(without_delimiter[0], node.text_type))
+			new_nodes.append(TextNode(text, text_type, url))
+		if node_text != "":
+			new_nodes.append(TextNode(node_text, node.text_type))
+	return new_nodes
