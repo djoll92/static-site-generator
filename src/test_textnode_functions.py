@@ -1,7 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from utils import *
-import pprint
+from textnode_functions import *
 
 
 class TestTextNodeToHTMLNode(unittest.TestCase):
