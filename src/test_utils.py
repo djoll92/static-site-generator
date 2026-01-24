@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from utils import text_node_to_html_node
+from utils import text_node_to_html_node, split_nodes_delimiter
 
 
 class TestTextNodeToHTMLNode(unittest.TestCase):
@@ -42,6 +42,50 @@ class TestTextNodeToHTMLNode(unittest.TestCase):
 		html_node = text_node_to_html_node(node)
 		self.assertEqual(html_node.tag, "code")
 		self.assertEqual(html_node.value, "This is a code node")
+
+
+class TestSplitNodesDelimiter(unittest.TestCase):
+	def test_single_occurrence(self):
+		node = TextNode("hello **world** friend", TextType.TEXT)
+		actual = split_nodes_delimiter([node], "**", TextType.BOLD)
+		expected = [
+			TextNode("hello ", TextType.TEXT),
+			TextNode("world", TextType.BOLD),
+			TextNode(" friend", TextType.TEXT)
+		]
+		self.assertEqual(actual, expected)
+
+	def test_multiple_occurrences(self):
+		node = TextNode("This is **very** cool **indeed**!", TextType.TEXT)
+		actual = split_nodes_delimiter([node], "**", TextType.BOLD)
+		expected = [
+			TextNode("This is ", TextType.TEXT),
+			TextNode("very", TextType.BOLD),
+			TextNode(" cool ", TextType.TEXT),
+			TextNode("indeed", TextType.BOLD),
+			TextNode("!", TextType.TEXT),
+		]
+		self.assertEqual(actual, expected)
+
+	def test_multiple_nodes(self):
+		node1 = TextNode("**bold** text", TextType.TEXT)
+		node2 = TextNode("Just plain text", TextType.TEXT)
+		node3 = TextNode("text **bold**", TextType.TEXT)
+		node4 = TextNode("very", TextType.BOLD)
+		actual = split_nodes_delimiter([node1, node2, node3, node4], "**", TextType.BOLD)
+		expected = [
+			TextNode("bold", TextType.BOLD),
+			TextNode(" text", TextType.TEXT),
+			TextNode("Just plain text", TextType.TEXT),
+			TextNode("text ", TextType.TEXT),
+			TextNode("bold", TextType.BOLD),
+			TextNode("very", TextType.BOLD),
+		]
+		self.assertEqual(actual, expected)
+		  
+	def test_unmatched_delimiter_raises(self):
+		with self.assertRaises(Exception):
+			split_nodes_delimiter([TextNode("This is **broken", TextType.TEXT)], "**", TextType.BOLD)
 
 
 if "__name__" == "__main__":
