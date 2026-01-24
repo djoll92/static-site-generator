@@ -102,3 +102,13 @@ def split_url_nodes_delimiter(old_nodes, text_type):
 		if node_text != "":
 			new_nodes.append(TextNode(node_text, node.text_type))
 	return new_nodes
+
+
+def text_to_textnodes(text):
+	nodes = [TextNode(text, TextType.TEXT)]
+	nodes = split_nodes_image(nodes)
+	nodes = split_nodes_link(nodes)
+	nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
+	nodes = split_nodes_delimiter(nodes, '**', TextType.BOLD)
+	nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC)
+	return nodes

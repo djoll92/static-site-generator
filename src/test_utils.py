@@ -248,5 +248,49 @@ class TestSplitURLNodesDelimiter(unittest.TestCase):
 			self.assertListEqual([node], split_url_nodes_delimiter([node], text_type))
 
 
+class TestTextToTextnodes(unittest.TestCase):
+	def test_text_to_textnodes(self):
+		text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+		expected = [
+			TextNode("This is ", TextType.TEXT),
+			TextNode("text", TextType.BOLD),
+			TextNode(" with an ", TextType.TEXT),
+			TextNode("italic", TextType.ITALIC),
+			TextNode(" word and a ", TextType.TEXT),
+			TextNode("code block", TextType.CODE),
+			TextNode(" and an ", TextType.TEXT),
+			TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+			TextNode(" and a ", TextType.TEXT),
+			TextNode("link", TextType.LINK, "https://boot.dev"),
+		]
+		self.assertListEqual(expected, text_to_textnodes(text))
+
+	def test_text_to_textnodes_only_code(self):
+		text = "`just code`"
+		expected = [TextNode("just code", TextType.CODE)]
+		self.assertListEqual(expected, text_to_textnodes(text))
+
+	def test_text_to_textnodes_only_image(self):
+		text = "![map](https://example.com/map.png)"
+		expected = [TextNode("map", TextType.IMAGE, "https://example.com/map.png")]
+		self.assertListEqual(expected, text_to_textnodes(text))
+
+	def test_text_to_textnodes_multiple_bold(self):
+		text = "Start **bold1** middle **bold2** end"
+		expected = [
+			TextNode("Start ", TextType.TEXT),
+			TextNode("bold1", TextType.BOLD),
+			TextNode(" middle ", TextType.TEXT),
+			TextNode("bold2", TextType.BOLD),
+			TextNode(" end", TextType.TEXT)
+		]
+		self.assertListEqual(expected, text_to_textnodes(text))
+
+	def test_image_alt_with_known_delimiter_symbols(self):
+		text = "![alt_with_code_`x`()](https://img.example.com/x.png)"
+		expected = [TextNode("alt_with_code_`x`()", TextType.IMAGE, "https://img.example.com/x.png")]
+		self.assertListEqual(expected, text_to_textnodes(text))
+
+
 if "__name__" == "__main__":
 	unittest.main()
