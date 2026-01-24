@@ -1,5 +1,7 @@
 from textnode import TextType, TextNode
 from htmlnode import LeafNode
+import re
+
 
 def text_node_to_html_node(text_node):
 	match text_node.text_type:
@@ -42,3 +44,21 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
 			if text != "":
 				new_nodes.append(TextNode(text, node.text_type))
 	return new_nodes
+
+
+def extract_markdown_images(text):
+	"""
+	:param text: Raw Markdown text
+	Return list of tuples.
+	Each tuple should contain the alt text and the URL of any markdown images.
+	"""
+	return re.findall(r"!\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
+
+
+def extract_markdown_links(text):
+	"""
+	:param text: Raw Markdown text
+	Return list of tuples.
+	Each tuple should contain the anchor text and the URLs of any markdown links.
+	"""
+	return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)

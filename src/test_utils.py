@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from utils import text_node_to_html_node, split_nodes_delimiter
+from utils import text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, extract_markdown_links
 
 
 class TestTextNodeToHTMLNode(unittest.TestCase):
@@ -86,6 +86,47 @@ class TestSplitNodesDelimiter(unittest.TestCase):
 	def test_unmatched_delimiter_raises(self):
 		with self.assertRaises(Exception):
 			split_nodes_delimiter([TextNode("This is **broken", TextType.TEXT)], "**", TextType.BOLD)
+
+
+class TestExtractMarkdownImages(unittest.TestCase):
+	def test_extract_markdown_images(self):
+		matches = extract_markdown_images(
+			"This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)"
+		)
+		self.assertListEqual([("image", "https://i.imgur.com/zjjcJKZ.png")], matches)
+
+	def test_extract_markdown_images_empty(self):
+		matches = extract_markdown_images(
+			"This is text with an [image](https://i.imgur.com/zjjcJKZ.png)"
+		)
+		self.assertListEqual([], matches)
+
+	def test_extract_markdown_images_multiple(self):
+		matches = extract_markdown_images(
+			"This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another one ![second image](https://i.imgur.com/zjjcJKZ.png)"
+		)
+		self.assertListEqual([("image", "https://i.imgur.com/zjjcJKZ.png"), ("second image", "https://i.imgur.com/zjjcJKZ.png")], matches)
+
+
+class TestExtractMarkdownLinks(unittest.TestCase):
+	def test_extract_markdown_links(self):
+		matches = extract_markdown_links(
+			"This is a text with a [link](google.com)"
+		)
+		self.assertListEqual([("link", "google.com")], matches)
+
+	def test_extract_markdown_links_empty(self):
+		matches = extract_markdown_links(
+			"This is a text with a ![link](google.com)"
+		)
+		self.assertListEqual([], matches)
+
+	def test_extract_markdown_links_multiple(self):
+		matches = extract_markdown_links(
+			"This is a text with a [link](google.com) and [another link](https://duckduckgo.com/)"
+		)
+		self.assertListEqual([("link", "google.com"), ("another link", "https://duckduckgo.com/")], matches)
+
 
 
 if "__name__" == "__main__":
