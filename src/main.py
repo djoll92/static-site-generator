@@ -7,7 +7,7 @@ import shutil
 
 def main():
 	copy_contents("static", "public")
-	generate_page("content/index.md", "template.html", "public/index.html")
+	generate_pages_recursive("content", "template.html", "public")
 
 
 def markdown_to_html_node(markdown):
@@ -91,6 +91,28 @@ def generate_page(from_path, template_path, dest_path):
 			file.write(html)
 	except Exception as err:
 		print(f"Cannot write to file {dest_path} - {err}")
+
+
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+	dir_path_content = os.path.abspath(dir_path_content)
+	template_path = os.path.abspath(template_path)
+	dest_dir_path = os.path.abspath(dest_dir_path)
+
+	if not os.path.exists(dir_path_content) or not os.path.isdir(dir_path_content):
+		raise FileNotFoundError(f"Source directory does not exist on this path: {dir_path_content}")
+	
+	for path in os.listdir(dir_path_content):
+		src_path = os.path.join(dir_path_content, path)
+		dst_path = os.path.join(dest_dir_path, path)
+		
+		if os.path.isfile(src_path):
+			if not src_path.endswith(".md"):
+				print(f"Skipped non-markdown file {src_path}")
+				continue
+			dst_path = dst_path.rstrip(".md") + ".html"
+			generate_page(src_path, template_path, dst_path)
+		else:
+			generate_pages_recursive(src_path, template_path, dst_path)
 
 
 if __name__ == "__main__":
