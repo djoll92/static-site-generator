@@ -1,4 +1,7 @@
 from enum import Enum
+from htmlnode import ParentNode
+from textnode_functions import text_node_to_html_node, text_to_textnodes, text_node_to_html_node
+from textnode import TextNode, TextType
 import re
 
 
@@ -12,7 +15,7 @@ class BlockType(Enum):
 
 
 def markdown_to_blocks(markdown):
-	raw_blocks = markdown.split("\n\n")
+	raw_blocks = markdown.strip().split("\n\n")
 	filtered_blocks = []
 	for i in range(len(raw_blocks)):
 		block = raw_blocks[i].strip()
@@ -51,3 +54,57 @@ def block_to_block_type(md_block):
 		return BlockType.OLIST
 	# Paragraph
 	return default_type
+
+
+def text_to_children(text):
+	children = []
+	textnodes = text_to_textnodes(text)
+	for textnode in textnodes:
+		children.append(text_node_to_html_node(textnode))
+	return children
+	
+
+def block_to_html_nodes(md_block, block_type):
+	if block_type == BlockType.HEADING:
+		md_block = md_block.split(" ", 1)[1]
+		md_block = " ".join( md_block.split("\n") )
+		return text_to_children(md_block)
+
+	if block_type == BlockType.QUOTE:
+		lines = md_block.split("\n")
+		md_block = " ".join(list(map(lambda line: line.split(" ", 1)[1], lines)))
+		return text_to_children(md_block)
+
+	if block_type in [BlockType.ULIST, BlockType.OLIST]:
+		children = []
+		lines = md_block.split("\n")
+		for line in lines:
+			item = line.split(" ", 1)[1]
+			children.append(ParentNode("li", text_to_children(item)))
+		return children
+	md_block = " ".join( md_block.split("\n") )
+	return text_to_children(md_block)
+
+
+def block_to_html_node(md_block, block_type):
+	if block_type == BlockType.CODE:
+		code_children = [text_node_to_html_node(TextNode(md_block.lstrip("```\n").rstrip("```"), TextType.TEXT))]
+		code_node = ParentNode("code", code_children)
+		return ParentNode("pre", [code_node])
+	
+	if block_type == BlockType.HEADING:
+		tag = f"h{len(md_block.split(" ", 1)[0])}"
+
+	if block_type == BlockType.QUOTE:
+		tag = "blockquote"
+	
+	if block_type == BlockType.ULIST:
+		tag = "ul"
+	
+	if block_type == BlockType.OLIST:
+		tag = "ol"
+
+	if block_type == BlockType.PARAGRAPH:
+		tag = "p"
+
+	return ParentNode(tag, block_to_html_nodes(md_block, block_type))
