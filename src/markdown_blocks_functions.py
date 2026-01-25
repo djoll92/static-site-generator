@@ -33,9 +33,9 @@ def block_to_block_type(md_block):
 	if md_block.startswith("```\n") and md_block.endswith("```"):
 		return BlockType.CODE
 	# Quote
-	if md_block.startswith("> "):
+	if md_block.startswith(">"):
 		for line in md_block.split("\n"):
-			if not line.startswith("> "):
+			if not line.startswith(">"):
 				return default_type
 		return BlockType.QUOTE
 	# Unordered list
@@ -72,7 +72,17 @@ def block_to_html_nodes(md_block, block_type):
 
 	if block_type == BlockType.QUOTE:
 		lines = md_block.split("\n")
-		md_block = " ".join(list(map(lambda line: line.split(" ", 1)[1], lines)))
+
+		def strip_quote_marker(line: str) -> str:
+			if not line.startswith(">"):
+				return line
+			# handle "> " and ">" with no following space
+			if len(line) > 1 and line[1] == " ":
+				return line[2:]
+			return line[1:]
+
+		stripped_lines = list(map(strip_quote_marker, lines))
+		md_block = " ".join(stripped_lines)
 		return text_to_children(md_block)
 
 	if block_type in [BlockType.ULIST, BlockType.OLIST]:
@@ -108,3 +118,11 @@ def block_to_html_node(md_block, block_type):
 		tag = "p"
 
 	return ParentNode(tag, block_to_html_nodes(md_block, block_type))
+
+
+def extract_title(markdown):
+	lines = markdown.split("\n")
+	for line in lines:
+		if line.startswith("# "):
+			return line.lstrip("# ").strip()
+	raise Exception("There is no title!")

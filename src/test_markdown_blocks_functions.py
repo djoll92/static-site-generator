@@ -110,16 +110,12 @@ class TestBlockToBlockType(unittest.TestCase):
 		self.assertEqual(BlockType.QUOTE, block_to_block_type(md))
 
 	def test_quote_multiline(self):
-		md = "> quote\n> quote"
+		md = "> \"I am in fact a Hobbit in all but size.\"\n>\n> -- J.R.R. Tolkien"
 		self.assertEqual(BlockType.QUOTE, block_to_block_type(md))
 
 	def test_quote_multiline_no_text(self):
 		md = "> quote\n> \n> quote\n> "
 		self.assertEqual(BlockType.QUOTE, block_to_block_type(md))
-
-	def test_quote_no_space(self):
-		md = ">quote"
-		self.assertEqual(BlockType.PARAGRAPH, block_to_block_type(md))
 
 	def test_quote_invalid_multiline(self):
 		md = "> quote\nquote\n> quote"
@@ -185,6 +181,17 @@ class TestBlockToBlockType(unittest.TestCase):
 		md = "1 li\n2 li"
 		self.assertEqual(BlockType.PARAGRAPH, block_to_block_type(md))
 
+
+class TestExtractTitle(unittest.TestCase):
+	def test_extract_title(self):
+		self.assertEqual("Hello", extract_title("# Hello"))
+
+	def test_no_title(self):
+		with self.assertRaises(Exception):
+			extract_title("Hello")
+
+	def test_multiline(self):
+		self.assertEqual("Hello", extract_title("Hello\n# Hello\n## Hello again"))
 
 
 if "__name__" == "__main__":
